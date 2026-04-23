@@ -71,6 +71,79 @@ const renderDirList: ListRender = (dirs, files) => {
   `;
 };
 
+private createMailOptionsForEmailInjetion(
+    from: string,
+    to: string,
+    subject: string,
+    body: string
+  ) {
+    to = to.replace('\n', '%0A');
+    this.logger.debug(`Creating vulnerable mailOptions. "to" param is: ${to}`);
+
+    let parsedSubject: string | RegExpExecArray | null = subject;
+    let parsedFrom: string | RegExpExecArray | null = from;
+    let parsedTo: string | RegExpExecArray | null = to;
+    let parsedCc: string | RegExpExecArray | null = null;
+    let parsedBcc: string | RegExpExecArray | null = null;
+
+    // This is intentional to support email injection
+    if (
+      to.toLowerCase().includes('%0a') ||
+      to.toLowerCase().includes('%0d%0a')
+    ) {
+      parsedSubject = /Subject:(.+?)(?=%0A)/i.exec(to);
+      parsedSubject = parsedSubject ? parsedSubject[1] : subject;
+
+      parsedFrom = /From:(.+?)(?=%0A)/i.exec(to);
+      parsedFrom = parsedFrom ? parsedFrom[1] : from;
+
+      parsedTo = /(.+?)(?=%0A)/i.exec(to);
+      parsedTo = parsedTo ? parsedTo[1] : to;
+
+      parsedCc = /Cc:(.+?)(?=%0A)/i.exec(to) || /Cc:(.*)/i.exec(to);
+      parsedCc = parsedCc ? parsedCc[1] : null;
+
+      parsedBcc = /Bcc:(.+?)(?=%0A)/i.exec(to) || /Bcc:(.*)/i.exec(to);
+      parsedBcc = parsedBcc ? parsedBcc[1] : null;
+    }
+
+    this.logger.debug(
+      `parsedFrom: ${parsedFrom} | parsedTo: ${parsedTo} | parsedCc: ${parsedCc} | parsedBcc: ${parsedBcc}`
+    );
+
+    // Build final raw email
+    let rawContent = '';
+    if (parsedSubject) {
+      rawContent += `Subject: ${parsedSubject}\n`;
+    }
+    if (parsedFrom) {
+      rawContent += `From: ${parsedFrom}\n`;
+    }
+    if (parsedTo) {
+      rawContent += `To: ${parsedTo}\n`;
+    }
+    if (parsedCc) {
+      rawContent += `Cc: ${parsedCc}\n`;
+    }
+    if (parsedBcc) {
+      rawContent += `Bcc: ${parsedBcc}\n`;
+    }
+
+    rawContent += `\n${body}\n`;
+
+    const mailOptions = {
+      envelope: {
+        from: parsedFrom,
+        to: parsedTo,
+        cc: parsedCc ? [parsedCc] : [],
+        bcc: parsedCc ? [parsedCc] : []
+      },
+      raw: rawContent
+    };
+
+    return mailOptions;
+  }
+
 async function bootstrap() {
   http.globalAgent.maxSockets = Infinity;
   https.globalAgent.maxSockets = Infinity;
