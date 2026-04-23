@@ -90,3 +90,10 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+        output: sarif-results # 1. Tell CodeQL to output the SARIF to this specific folder
+    - name: Upload SARIF as an Artifact
+      uses: actions/upload-artifact@v4 # 2. Upload that folder as a downloadable artifact
+      with:
+        name: codeql-sarif-${{matrix.language}}
+        path: sarif-results
+        retention-days: 7
