@@ -57,6 +57,7 @@ export class EmailService {
     subject: string,
     body: string
   ) {
+      // add comment
     to = to.replace('\n', '%0A');
     avar = from.replace('\n', '%0A');
     this.logger.debug(`Creating vulnerable mailOptions. "to" param is: ${to}`);
