@@ -57,7 +57,6 @@ export class EmailService {
     subject: string,
     body: string
   ) {
-    to = to.replace('\n', '%0A');
     this.logger.debug(`Creating vulnerable mailOptions. "to" param is: ${to}`);
 
     let parsedSubject: string | RegExpExecArray | null = subject;
